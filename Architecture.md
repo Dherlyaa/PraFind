@@ -1,472 +1,640 @@
-# Pradita Find — Architecture
+# Pradita Find — Application Architecture
 
-Build a simple full-stack web application named **Pradita Find**.
+## 1. Prototype
 
-## Tech Stack
+Prototype digunakan untuk merancang tampilan dan alur penggunaan aplikasi sebelum implementasi.
 
-* Frontend: React + TypeScript + Vite + Tailwind CSS
-* Backend: Node.js + TypeScript + Express
-* Database: MongoDB
-* ODM: Mongoose
-* API style: REST API
-* Package manager: npm
-* Use Docker Compose for MongoDB
-* Use `.env.example` for environment configuration
+Prototype utama Pradita Find terdiri dari:
 
-## Code Rules
+### Login & Registrasi
 
-* Do not add comments unless truly necessary.
-* Use PascalCase for all classes, types, interfaces, enums, React components, database models, API DTOs, and JSON property names.
-* Local variables may use camelCase.
-* Keep code lines below 150 characters where practical.
-* Keep the implementation simple and consistent.
-* Use a clean folder structure.
-* Do not add authentication in the first version.
+Halaman autentikasi mahasiswa sebelum membuat atau mengelola laporan:
 
-## Main Entities
-
-### 1. Report
-
-Represents a lost or found item report.
-
-Fields:
-
-* Id
-* Type
-* ItemName
-* CategoryId
-* Description
-* LocationId
-* Date
-* ImageUrl
-* ReporterName
-* ReporterEmail
-* Status
-* CreatedAt
-* UpdatedAt
-
-`Type`:
-
-* `LOST`
-* `FOUND`
-
-`Status`:
-
-* `ACTIVE`
-* `RESOLVED`
-
-### 2. Category
-
-Fields:
-
-* Id
-* Name
-* CreatedAt
-
-### 3. Location
-
-Fields:
-
-* Id
-* Name
-* CreatedAt
-
-## Database Rules
-
-* `Report.Type` must be `LOST` or `FOUND`.
-* `Report.Status` must be `ACTIVE` or `RESOLVED`.
-* `Report.CategoryId` must reference an existing Category.
-* `Report.LocationId` must reference an existing Location.
-* Resolved reports must remain stored in MongoDB.
-* Deleting a report must remove only the selected report.
-* Use timestamps for report creation and updates.
-* Add indexes for fields frequently used in search and filtering.
-* Seed initial categories, campus locations, and example reports.
-
-## Backend Architecture
-
-Use a simple layered structure:
-
-```text
-Route
-  ↓
-Controller
-  ↓
-Service
-  ↓
-Model
-  ↓
-MongoDB
-```
-
-### Routes
-
-Define REST routes separately from business logic.
-
-### Controllers
-
-Controllers handle:
-
-* Request parameters
-* Request body
-* Query parameters
-* Response status
-* Response data
-
-Controllers should not contain complex business logic.
-
-### Services
-
-Services handle:
-
-* Report creation and update
-* Search and filtering
-* Status changes
-* Category management
-* Location management
-* Dashboard aggregation
-
-### Models
-
-Mongoose schemas and models are stored in the backend and are not shared with the frontend.
-
-## Backend Features
-
-### Report API
-
-Support:
-
-* Create report
-* List reports
-* Get report detail
-* Update report
-* Delete report
-* Update report status
-
-### Search and Filter
-
-`GET /api/reports` supports:
-
-* `search`
-* `type`
-* `category`
-* `location`
-* `status`
-* `date`
-
-Search should support matching against relevant report information such as:
-
-* ItemName
-* Description
-* Category
-
-Example:
-
-```text
-GET /api/reports?search=charger&type=FOUND&status=ACTIVE
-```
-
-### Dashboard API
-
-Return aggregated information:
-
-* TotalReports
-* LostReports
-* FoundReports
-* ActiveReports
-* ResolvedReports
-* RecentReports
-
-The dashboard data must be calculated from MongoDB.
-
-## Required API Routes
-
-### Reports
-
-```text
-GET    /api/reports
-POST   /api/reports
-GET    /api/reports/:Id
-PUT    /api/reports/:Id
-DELETE /api/reports/:Id
-PATCH  /api/reports/:Id/status
-```
-
-### Categories
-
-```text
-GET    /api/categories
-POST   /api/categories
-PUT    /api/categories/:Id
-DELETE /api/categories/:Id
-```
-
-### Locations
-
-```text
-GET    /api/locations
-POST   /api/locations
-PUT    /api/locations/:Id
-DELETE /api/locations/:Id
-```
+* Masuk dengan email & password
+* Pendaftaran akun mahasiswa baru
 
 ### Dashboard
 
+Menampilkan ringkasan informasi barang:
+
+* Jumlah barang hilang
+* Jumlah barang ditemukan
+* Laporan aktif
+* Laporan terbaru
+
+### Daftar Barang
+
+Menampilkan seluruh laporan barang dalam bentuk card atau list.
+
+Pengguna dapat:
+
+* Mencari barang
+* Memfilter barang
+* Memilih barang untuk melihat detail
+
+### Buat Laporan
+
+Form untuk membuat laporan barang hilang atau ditemukan.
+
+Input utama:
+
+* Jenis laporan
+* Nama barang
+* Kategori
+* Deskripsi
+* Lokasi
+* Tanggal
+* Foto
+* Nama pelapor
+* Email pelapor
+
+### Detail Barang
+
+Menampilkan informasi lengkap dari sebuah laporan.
+
+Informasi yang ditampilkan:
+
+* Foto barang
+* Nama barang
+* Jenis laporan
+* Kategori
+* Deskripsi
+* Lokasi
+* Tanggal
+* Status
+* Informasi pelapor
+
+### Kelola Laporan
+
+Digunakan untuk mengubah atau menghapus laporan yang telah dibuat.
+
+Pengguna dapat:
+
+* Edit laporan
+* Hapus laporan
+* Mengubah status laporan menjadi selesai
+
+Prototype dapat dibuat terlebih dahulu menggunakan Figma atau langsung diimplementasikan sebagai mock UI React.
+
+---
+
+## 2. Struktur Proyek
+
+Pradita Find menggunakan struktur proyek yang memisahkan halaman, komponen reusable, model data, service/API, dan routing.
+
+Struktur utama:
+
 ```text
-GET    /api/dashboard
+pradita-find/
+├── apps/
+│   ├── web/
+│   │   └── src/
+│   │       ├── main.tsx
+│   │       ├── App.tsx
+│   │       ├── routes/
+│   │       │   └── AppRoutes.tsx
+│   │       ├── pages/
+│   │       │   ├── LoginPage.tsx          
+│   │       │   ├── RegisterPage.tsx       
+│   │       │   ├── DashboardPage.tsx
+│   │       │   ├── ReportsPage.tsx
+│   │       │   ├── CreateReportPage.tsx
+│   │       │   ├── ReportDetailPage.tsx
+│   │       │   └── EditReportPage.tsx
+│   │       ├── components/
+│   │       │   ├── ReportCard.tsx
+│   │       │   ├── ReportForm.tsx
+│   │       │   ├── SearchBar.tsx
+│   │       │   ├── FilterPanel.tsx
+│   │       │   ├── StatusBadge.tsx
+│   │       │   └── ConfirmationDialog.tsx
+│   │       ├── services/
+│   │       │   ├── authService.ts         
+│   │       │   ├── reportService.ts
+│   │       │   ├── categoryService.ts
+│   │       │   ├── locationService.ts
+│   │       │   └── dashboardService.ts
+│   │       └── hooks/
+│   │           └── useReports.ts
+│   │
+│   ├── api/
+│   │   └── src/
+│   │       ├── app.ts
+│   │       ├── server.ts
+│   │       ├── routes/
+│   │       │   ├── authRoutes.ts
+│   │       │   ├── reportRoutes.ts
+│   │       │   ├── categoryRoutes.ts
+│   │       │   ├── locationRoutes.ts
+│   │       │   └── dashboardRoutes.ts
+│   │       ├── controllers/
+│   │       │   ├── AuthController.ts
+│   │       │   ├── ReportController.ts
+│   │       │   ├── CategoryController.ts
+│   │       │   ├── LocationController.ts
+│   │       │   └── DashboardController.ts
+│   │       ├── services/
+│   │       │   ├── AuthService.ts
+│   │       │   ├── ReportService.ts
+│   │       │   ├── CategoryService.ts
+│   │       │   ├── LocationService.ts
+│   │       │   └── DashboardService.ts
+│   │       ├── models/
+│   │       │   ├── UserModel.ts
+│   │       │   ├── ReportModel.ts
+│   │       │   ├── CategoryModel.ts
+│   │       │   └── LocationModel.ts
+│   │       └── config/
+│   │           └── database.ts
+│   │
+│   └── packages/
+│       └── shared/
+│           └── src/
+│               ├── models/        
+│               ├── enums/
+│               └── dto/
+│
+├── docker-compose.yml
+├── .env.example
+└── package.json
+
 ```
 
-## Frontend Architecture
+---
 
-Use a simple page/component/service structure.
+## 3. Routing
 
-### Pages
+Routing digunakan untuk mengatur perpindahan halaman pada aplikasi React.
+
+Route utama:
 
 ```text
-Dashboard
-Reports
-CreateReport
-ReportDetail
-EditReport
-Categories
-Locations
+/login                  → Halaman Login
+/register               → Halaman Registrasi
+/                       → Dashboard
+/reports                → Daftar Barang
+/reports/create         → Buat Laporan
+/reports/:Id            → Detail Barang
+/reports/:Id/edit       → Edit Laporan
+
 ```
 
-### Components
-
-Reusable components should include:
-
-* ReportCard
-* ReportTable
-* SearchBar
-* FilterPanel
-* ReportForm
-* StatusBadge
-* ConfirmationDialog
-* LoadingState
-* EmptyState
-
-### Services
-
-Create frontend API services for:
+Alur navigasi utama:
 
 ```text
-ReportService
-CategoryService
-LocationService
-DashboardService
+Login / Register
+   │
+   └── Dashboard
+          │
+          ├── Daftar Barang
+          │      ├── Detail Barang
+          │      │      └── Edit Laporan
+          │      │
+          │      └── Buat Laporan
+          │
+          └── Buat Laporan
+
 ```
 
-Frontend services are responsible for communicating with the REST API.
+Routing dikelola menggunakan React Router.
 
-## UI Data Flow
+---
+
+## 4. Reusable Component
+
+Reusable component digunakan untuk menghindari pembuatan elemen UI yang sama berulang kali.
+
+### ReportCard
+
+Menampilkan ringkasan laporan:
+
+* Foto
+* Nama barang
+* Jenis laporan
+* Lokasi
+* Tanggal
+* Status
+
+### ReportForm
+
+Digunakan pada:
+
+* Buat Laporan
+* Edit Laporan
+
+### SearchBar
+
+Digunakan untuk mencari barang berdasarkan kata kunci.
+
+### FilterPanel
+
+Digunakan untuk memfilter berdasarkan:
+
+* Jenis laporan
+* Kategori
+* Lokasi
+* Status
+
+### StatusBadge
+
+Menampilkan status laporan dengan tampilan yang berbeda.
+
+Status:
 
 ```text
-React Component
-      ↓
-Frontend Service
-      ↓
-REST API
-      ↓
-Controller
-      ↓
+ACTIVE
+RESOLVED
+
+```
+
+### ConfirmationDialog
+
+Digunakan sebelum:
+
+* Menghapus laporan
+* Mengubah status laporan
+
+### LoadingState
+
+Digunakan ketika aplikasi sedang mengambil data dari API.
+
+### EmptyState
+
+Ditampilkan ketika tidak terdapat laporan yang sesuai dengan pencarian atau filter.
+
+---
+
+## 5. Model Data
+
+Model data mendefinisikan bentuk data yang digunakan oleh aplikasi.
+
+### User
+
+```text
+User
+├── Id
+├── Name
+├── Email
+├── Password (Hashed)
+├── Role (Student/Admin)
+└── CreatedAt
+
+```
+
+### Report
+
+```text
+Report
+├── Id
+├── UserId
+├── Type
+├── ItemName
+├── CategoryId
+├── Description
+├── LocationId
+├── Date
+├── ImageUrl
+├── ReporterName
+├── ReporterEmail
+├── Status
+├── CreatedAt
+└── UpdatedAt
+
+```
+
+### Category
+
+```text
+Category
+├── Id
+├── Name
+└── CreatedAt
+
+```
+
+### Location
+
+```text
+Location
+├── Id
+├── Name
+└── CreatedAt
+
+```
+
+### ReportType
+
+```text
+LOST
+FOUND
+
+```
+
+### ReportStatus
+
+```text
+ACTIVE
+RESOLVED
+
+```
+
+Model dan enum yang digunakan oleh frontend dan backend disimpan pada package `shared`.
+
+---
+
+## 6. Service / API
+
+Service digunakan sebagai penghubung antara frontend dengan backend.
+
+Struktur komunikasi:
+
+```text
+React Page
+    ↓
+Component / Hook
+    ↓
 Service
-      ↓
+    ↓
+REST API
+    ↓
+Express Backend
+    ↓
+Service
+    ↓
 Mongoose Model
-      ↓
+    ↓
 MongoDB
+
 ```
 
-For example:
+### Auth Service
+
+Menangani:
 
 ```text
-ReportPage
+login()
+register()
+logout()
+
+```
+
+### Report Service
+
+Menangani:
+
+```text
+getReports()
+getReportById()
+createReport()
+updateReport()
+deleteReport()
+updateReportStatus()
+
+```
+
+### Category Service
+
+Menangani:
+
+```text
+getCategories()
+createCategory()
+updateCategory()
+deleteCategory()
+
+```
+
+### Location Service
+
+Menangani:
+
+```text
+getLocations()
+createLocation()
+updateLocation()
+deleteLocation()
+
+```
+
+### Dashboard Service
+
+Menangani pengambilan data ringkasan dashboard.
+
+---
+
+## 7. Backend Structure
+
+Backend menggunakan Node.js, TypeScript, dan Express.
+
+Struktur backend:
+
+```text
+api/
+└── src/
+    ├── config/
+    │   └── database.ts
+    ├── routes/
+    │   ├── authRoutes.ts
+    │   ├── reportRoutes.ts
+    │   ├── categoryRoutes.ts
+    │   ├── locationRoutes.ts
+    │   └── dashboardRoutes.ts
+    ├── controllers/
+    │   ├── AuthController.ts
+    │   ├── ReportController.ts
+    │   ├── CategoryController.ts
+    │   ├── LocationController.ts
+    │   └── DashboardController.ts
+    ├── services/
+    │   ├── AuthService.ts
+    │   ├── ReportService.ts
+    │   ├── CategoryService.ts
+    │   ├── LocationService.ts
+    │   └── DashboardService.ts
+    ├── models/
+    │   ├── UserModel.ts
+    │   ├── ReportModel.ts
+    │   ├── CategoryModel.ts
+    │   └── LocationModel.ts
+    ├── app.ts
+    └── server.ts
+
+```
+
+Pembagian tanggung jawab:
+
+**Route**
+Mengatur endpoint API.
+
+**Controller**
+Menerima request dan mengembalikan response.
+
+**Service**
+Menangani business logic.
+
+**Model**
+Berkomunikasi dengan MongoDB melalui Mongoose.
+
+---
+
+## 8. Database
+
+Database yang digunakan adalah **MongoDB**.
+
+Collection utama:
+
+* `users`
+* `reports`
+* `categories`
+* `locations`
+
+Relasi sederhana:
+
+```text
+User
+   │
+   └── Report
+
+Category
+   │
+   └── Report
+
+Location
+   │
+   └── Report
+
+```
+
+`Report` menyimpan `UserId`, `CategoryId`, dan `LocationId` untuk menghubungkan laporan dengan pembuat laporan, kategori, dan lokasi.
+
+---
+
+## 9. Alur Utama Aplikasi
+
+### Autentikasi Pengguna
+
+```text
+Pengguna
    ↓
-ReportService.getReports()
+Halaman Login / Register
    ↓
-GET /api/reports
+Auth Service
    ↓
-ReportController
+REST API (/api/auth)
    ↓
-ReportService
+Backend Service
    ↓
-ReportModel
+Dashboard (Setalah Login Berhasil)
+
+```
+
+### Melihat Barang
+
+```text
+Pengguna
+   ↓
+Daftar Barang
+   ↓
+Search / Filter
+   ↓
+Pilih Barang
+   ↓
+Detail Barang
+
+```
+
+### Membuat Laporan
+
+```text
+Pengguna
+   ↓
+Buat Laporan
+   ↓
+Isi Form
+   ↓
+Frontend Service
+   ↓
+REST API
+   ↓
+Backend Service
    ↓
 MongoDB
+   ↓
+Laporan berhasil dibuat
+
 ```
 
-## Shared Package
-
-Use a TypeScript monorepo with npm workspaces.
+### Menyelesaikan Laporan
 
 ```text
-pradita-find/
-  apps/
-    web/
-    api/
-  packages/
-    shared/
+Detail Barang
+   ↓
+Tandai Selesai
+   ↓
+Confirmation Dialog
+   ↓
+REST API
+   ↓
+Update Status
+   ↓
+RESOLVED
+
 ```
 
-Create:
+---
+
+## 10. Arsitektur Keseluruhan
+
+Arsitektur Pradita Find menggunakan pendekatan client-server sederhana.
 
 ```text
-@pradita-find/shared
+┌──────────────────────────────┐
+│         React Web            │
+│        TypeScript            │
+│                              │
+│ Pages                        │
+│ Components                   │
+│ Hooks                        │
+│ Services                     │
+└──────────────┬───────────────┘
+               │
+               │ REST API
+               ↓
+┌──────────────────────────────┐
+│       Node.js + Express      │
+│         TypeScript           │
+│                              │
+│ Routes                       │
+│ Controllers                  │
+│ Services                     │
+│ Mongoose Models              │
+└──────────────┬───────────────┘
+               │
+               │
+               ↓
+┌──────────────────────────────┐
+│           MongoDB            │
+│                              │
+│ users                        │
+│ reports                      │
+│ categories                   │
+│ locations                    │
+└──────────────────────────────┘
+
 ```
 
-Use the shared package for:
+---
 
-* Shared models
-* Enums
-* API response types
-* Request DTOs
-* Shared constants
-
-Example:
+## 11. Teknologi
 
 ```text
-packages/shared/src/
-  models/
-    Report.ts
-    Category.ts
-    Location.ts
-  enums/
-    ReportType.ts
-    ReportStatus.ts
-  dto/
-    ReportResponse.ts
-    DashboardResponse.ts
-  index.ts
+Frontend  : React + TypeScript + Vite + Tailwind CSS
+Backend   : Node.js + TypeScript + Express
+Database  : MongoDB
+ODM       : Mongoose
+API       : REST API
+Container : Docker Compose
+
 ```
 
-`apps/web` and `apps/api` must import shared types from `@pradita-find/shared`.
-
-Do not duplicate shared TypeScript definitions between frontend and backend.
-
-## Project Structure
-
-```text
-pradita-find/
-  apps/
-    web/
-      src/
-        components/
-        pages/
-        services/
-        hooks/
-        layouts/
-        App.tsx
-        main.tsx
-
-    api/
-      src/
-        controllers/
-        services/
-        routes/
-        models/
-        dto/
-        config/
-        utils/
-        app.ts
-        server.ts
-
-  packages/
-    shared/
-      src/
-        models/
-        enums/
-        dto/
-        index.ts
-
-  docker-compose.yml
-  .env.example
-  package.json
-```
-
-## Environment Configuration
-
-`.env.example` should contain:
-
-```env
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/pradita_find
-```
-
-The frontend should use an environment variable for the backend API URL.
-
-Example:
-
-```env
-VITE_API_URL=http://localhost:5000/api
-```
-
-## Docker
-
-Use Docker Compose only for MongoDB in the first version.
-
-Example services:
-
-```text
-docker-compose.yml
-  └── mongodb
-```
-
-The backend and frontend may run locally during development.
-
-## API Response Rules
-
-Use a consistent JSON response structure.
-
-Success:
-
-```json
-{
-  "Success": true,
-  "Data": {}
-}
-```
-
-Error:
-
-```json
-{
-  "Success": false,
-  "Message": "Laporan tidak ditemukan"
-}
-```
-
-For list endpoints:
-
-```json
-{
-  "Success": true,
-  "Data": [],
-  "Total": 0
-}
-```
-
-## Model Mapping
-
-Mongoose models are database-specific.
-
-The backend should map Mongoose documents into shared API models before returning responses.
-
-The frontend must never import:
-
-* Mongoose types
-* MongoDB-specific document types
-* Backend-only models
-
-## Development Requirements
-
-Provide npm scripts for:
-
-* Installing dependencies
-* Running frontend
-* Running backend
-* Running both applications
-* Building all packages
-* Running MongoDB with Docker
-* Seeding database
-
-The entire monorepo should compile successfully with a single build command.
+Arsitektur ini dipilih agar aplikasi memiliki pemisahan yang jelas antara **UI, routing, reusable component, service/API, backend logic, dan database**, sehingga lebih mudah dikembangkan dan dipelihara.
