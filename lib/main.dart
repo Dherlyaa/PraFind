@@ -1,27 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'features/reports/presentation/pages/create_report_page.dart';
+import 'features/reports/presentation/pages/report_list_page.dart';
 
 void main() {
   runApp(
     const ProviderScope(
-      child: MyApp(),
+      child: PraditaFindApp(),
     ),
   );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class PraditaFindApp extends StatelessWidget {
+  const PraditaFindApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Pradita Find',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const CreateReportPage(),
+      home: const ReportListPage(),
     );
   }
 }
