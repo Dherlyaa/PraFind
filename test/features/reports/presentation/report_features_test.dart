@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pradita_find_mobile/features/reports/data/report_repository.dart';
-import 'package:pradita_find_mobile/features/reports/domain/report_model.dart';
-import 'package:pradita_find_mobile/features/reports/presentation/pages/report_list_page.dart';
-import 'package:pradita_find_mobile/features/reports/presentation/pages/create_report_page.dart';
+
+import '../../../../lib/features/reports/data/report_repository.dart';
+import '../../../../lib/features/reports/domain/report_model.dart';
+import '../../../../lib/features/reports/presentation/pages/report_list_page.dart';
+import '../../../../lib/features/reports/presentation/pages/create_report_page.dart';
+import '../../../../lib/features/reports/presentation/providers/report_list_provider.dart';
 
 class MockReportRepository extends ReportRepository {
   final bool forceError;
@@ -82,7 +84,6 @@ void main() {
   testWidgets('5. Verifikasi Validasi Input Form (Fitur 2)', (tester) async {
     await tester.pumpWidget(buildTestableWidget(MockReportRepository(), const CreateReportPage()));
 
-    // Ketuk tombol submit tanpa mengisi input
     await tester.tap(find.byKey(const Key('submit_button')));
     await tester.pump();
 
@@ -93,17 +94,17 @@ void main() {
   testWidgets('6. Verifikasi Submitting Loading State & Prevent Double Tap', (tester) async {
     await tester.pumpWidget(buildTestableWidget(MockReportRepository(), const CreateReportPage()));
 
-    // Isi Form
     await tester.enterText(find.byKey(const Key('title_input')), 'Tas');
     await tester.enterText(find.byKey(const Key('location_input')), 'Kantin');
     await tester.enterText(find.byKey(const Key('description_input')), 'Warna Hitam');
 
-    // Tap submit
     await tester.tap(find.byKey(const Key('submit_button')));
-    await tester.pump(); // Trigger frame awal saat submitting
+    await tester.pump();
 
-    // Tombol harus bermutasi ke state disabled (onPressed == null)
     final button = tester.widget<ElevatedButton>(find.byKey(const Key('submit_button')));
     expect(button.onPressed, isNull);
+
+    // Menyelesaikan timer 300ms agar tidak ada pending async timer saat tes selesai
+    await tester.pumpAndSettle();
   });
 }

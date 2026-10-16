@@ -14,7 +14,6 @@ class ReportListPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Pradita Find — Daftar Barang'),
         actions: [
-          // Simulated test toggles untuk dosen/tester
           PopupMenuButton<String>(
             onSelected: (value) {
               final notifier = ref.read(reportListProvider.notifier);
@@ -64,7 +63,6 @@ class ReportListPage extends ConsumerWidget {
   }
 
   Widget _buildContent(BuildContext context, WidgetRef ref, ReportListState state) {
-    // KONDISI 1: Initial Loading State
     if (state.status == ListStatus.initialLoading) {
       return const Center(
         child: Column(
@@ -78,7 +76,6 @@ class ReportListPage extends ConsumerWidget {
       );
     }
 
-    // KONDISI 3: Empty State
     if (state.status == ListStatus.empty) {
       return const Center(
         child: Column(
@@ -92,7 +89,6 @@ class ReportListPage extends ConsumerWidget {
       );
     }
 
-    // KONDISI 4: Error State dengan Tombol Retry
     if (state.status == ListStatus.error) {
       return Center(
         child: Column(
@@ -115,7 +111,6 @@ class ReportListPage extends ConsumerWidget {
       );
     }
 
-    // KONDISI 2: Data Berhasil Dimuat (Success State)
     return ListView.builder(
       itemCount: state.reports.length,
       itemBuilder: (context, index) {

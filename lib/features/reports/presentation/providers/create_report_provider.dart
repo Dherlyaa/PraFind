@@ -32,14 +32,10 @@ class CreateReportNotifier extends StateNotifier<CreateReportState> {
   CreateReportNotifier(this.repository, this.ref) : super(CreateReportState());
 
   Future<bool> submitReport(ReportModel report) async {
-    // Mengubah status ke submitting untuk mencegah double tap pada UI
     state = state.copyWith(status: FormSubmitStatus.submitting);
-
     try {
       await repository.submitReport(report);
       state = state.copyWith(status: FormSubmitStatus.success);
-      
-      // Auto refresh data di Fitur 1 setelah submit berhasil
       ref.read(reportListProvider.notifier).loadReports();
       return true;
     } catch (e) {

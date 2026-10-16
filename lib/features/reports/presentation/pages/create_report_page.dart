@@ -27,7 +27,6 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
   }
 
   void _submitForm() async {
-    // KONDISI 5: Trigger Validasi Input pada Form
     if (_formKey.currentState!.validate()) {
       final report = ReportModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -52,8 +51,6 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
   @override
   Widget build(BuildContext context) {
     final formState = ref.watch(createReportProvider);
-    
-    // KONDISI 6: Cek status submitting untuk mencegah double tap
     final isSubmitting = formState.status == FormSubmitStatus.submitting;
 
     return Scaffold(
@@ -73,7 +70,6 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
                   labelText: 'Nama Barang',
                   border: OutlineInputBorder(),
                 ),
-                // KONDISI 5: Aturan Validasi
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) {
                     return 'Nama barang tidak boleh kosong';
@@ -127,8 +123,6 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
                 },
               ),
               const SizedBox(height: 24),
-
-              // KONDISI 6: UI Loading saat submit (onPressed = null jika submitting)
               ElevatedButton(
                 key: const Key('submit_button'),
                 onPressed: isSubmitting ? null : _submitForm,

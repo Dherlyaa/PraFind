@@ -4,7 +4,7 @@ class ReportModel {
   final String category;
   final String location;
   final String description;
-  final String type; // 'LOST' atau 'FOUND'
+  final String type;
 
   ReportModel({
     required this.id,
