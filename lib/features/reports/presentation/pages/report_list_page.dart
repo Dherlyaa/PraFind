@@ -11,51 +11,25 @@ class ReportListPage extends ConsumerWidget {
     final listState = ref.watch(reportListProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pradita Find — Daftar Barang'),
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              final notifier = ref.read(reportListProvider.notifier);
-              if (value == 'empty') notifier.loadReports(forceEmpty: true);
-              if (value == 'error') notifier.loadReports(forceError: true);
-              if (value == 'normal') notifier.loadReports();
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: 'normal', child: Text('Simulasi Success')),
-              const PopupMenuItem(value: 'empty', child: Text('Simulasi Empty State')),
-              const PopupMenuItem(value: 'error', child: Text('Simulasi Error State')),
-            ],
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Pradita Find — Storage Lokal')),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: TextField(
-              key: const Key('search_input'),
               decoration: const InputDecoration(
                 hintText: 'Cari barang (e.g. KTM, Charger)...',
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
               ),
-              onChanged: (val) {
-                ref.read(reportListProvider.notifier).loadReports(query: val);
-              },
+              onChanged: (val) => ref.read(reportListProvider.notifier).loadReports(query: val),
             ),
           ),
           Expanded(child: _buildContent(context, ref, listState)),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        key: const Key('add_report_fab'),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const CreateReportPage()),
-          );
-        },
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateReportPage())),
         label: const Text('Buat Laporan'),
         icon: const Icon(Icons.add),
       ),
@@ -63,53 +37,8 @@ class ReportListPage extends ConsumerWidget {
   }
 
   Widget _buildContent(BuildContext context, WidgetRef ref, ReportListState state) {
-    if (state.status == ListStatus.initialLoading) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(key: Key('loading_indicator')),
-            SizedBox(height: 8),
-            Text('Memuat data barang...'),
-          ],
-        ),
-      );
-    }
-
-    if (state.status == ListStatus.empty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.inbox, size: 64, color: Colors.grey),
-            SizedBox(height: 8),
-            Text('Tidak ada laporan barang ditemukan.'),
-          ],
-        ),
-      );
-    }
-
-    if (state.status == ListStatus.error) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 8),
-            Text(state.errorMessage),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              key: const Key('retry_button'),
-              onPressed: () {
-                ref.read(reportListProvider.notifier).loadReports();
-              },
-              icon: const Icon(Icons.refresh),
-              label: const Text('Coba Lagi'),
-            ),
-          ],
-        ),
-      );
-    }
+    if (state.status == ListStatus.initialLoading) return const Center(child: CircularProgressIndicator());
+    if (state.status == ListStatus.empty) return const Center(child: Text('Data lokal kosong. Buat laporan baru.'));
 
     return ListView.builder(
       itemCount: state.reports.length,
@@ -118,11 +47,42 @@ class ReportListPage extends ConsumerWidget {
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           child: ListTile(
-            title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('${item.category} • ${item.location}'),
-            trailing: Chip(
-              label: Text(item.type),
-              backgroundColor: item.type == 'LOST' ? Colors.red.shade100 : Colors.green.shade100,
+            title: Text(item.title, style: TextStyle(
+              fontWeight: FontWeight.bold,
+              decoration: item.status == 'RESOLVED' ? TextDecoration.lineThrough : null,
+            )),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${item.category} • ${item.location}'),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Chip(label: Text(item.type, style: const TextStyle(fontSize: 10)), padding: EdgeInsets.zero,
+                      backgroundColor: item.type == 'LOST' ? Colors.red.shade100 : Colors.green.shade100,
+                    ),
+                    const SizedBox(width: 8),
+                    if (item.status == 'RESOLVED')
+                      Chip(label: const Text('SELESAI', style: TextStyle(fontSize: 10)), padding: EdgeInsets.zero,
+                        backgroundColor: Colors.blue.shade100,
+                      ),
+                  ],
+                )
+              ],
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (item.status == 'ACTIVE')
+                  IconButton(
+                    icon: const Icon(Icons.check_circle_outline, color: Colors.green),
+                    onPressed: () => ref.read(reportListProvider.notifier).markAsResolved(item),
+                  ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  onPressed: () => ref.read(reportListProvider.notifier).deleteReport(item.id),
+                ),
+              ],
             ),
           ),
         );

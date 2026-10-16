@@ -7,21 +7,21 @@
 
 ## 1. Bukti Hasil Widget Test (6 Kondisi UI)
 
-![alt text](image.png)
+![alt text](flutter_test.png)
 
 **Daftar Pengujian yang Lulus (100% Passed):**
 1. ✓ Initial Loading State
-![alt text](image-1.png)
+![alt text](initial_loading_state.png)
 2. ✓ Data Berhasil Dimuat (Success State)
-![alt text](image-2.png)
+![alt text](success_state.png)
 3. ✓ Empty State
-![alt text](image-3.png)
+![alt text](empty_state.png)
 4. ✓ Error State & Tombol Retry
-![alt text](image-4.png)
+![alt text](error_state_&_retry.png)
 5. ✓ Validasi Input pada Form
-![alt text](image-5.png)
+![alt text](form_validation_error.png)
 6. ✓ Submitting Loading State (Prevent Double Tap)
-![alt text](image-6.png)
+![alt text](submitted_loading.png)
 
 ---
 
