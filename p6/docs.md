@@ -34,6 +34,7 @@ Untuk menjamin keandalan *parsing* data dan *request* API, telah dibuat dan diek
     **Sudah.** Koneksi API diimplementasikan pada file `lib/features/reports/data/report_repository.dart`. *Class* `ReportRepository` telah menggunakan `http.Client` untuk melakukan operasi GET (Fetch data), POST (Submit data), PUT (Update status), dan DELETE (Hapus data) ke *base URL* API.
 *   **Apakah sudah ada Unit test?** 
     **Sudah.** Pengujian terdapat pada file `test/features/reports/presentation/report_features_test.dart` yang berisi 6 *test cases* (termasuk mock HTTP Client untuk menyimulasikan *response* API rusak, kosong, sukses, dan *error*).
+    ![alt text](flutter_test.png)
 
 ---
 **Lampiran:** 
