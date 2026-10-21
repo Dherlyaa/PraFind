@@ -11,7 +11,7 @@ class ReportListPage extends ConsumerWidget {
     final listState = ref.watch(reportListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Pradita Find — Storage Lokal')),
+      appBar: AppBar(title: const Text('Pradita Find — API Integration')),
       body: Column(
         children: [
           Padding(
@@ -37,9 +37,44 @@ class ReportListPage extends ConsumerWidget {
   }
 
   Widget _buildContent(BuildContext context, WidgetRef ref, ReportListState state) {
-    if (state.status == ListStatus.initialLoading) return const Center(child: CircularProgressIndicator());
-    if (state.status == ListStatus.empty) return const Center(child: Text('Data lokal kosong. Buat laporan baru.'));
+    // 1. Tampilan LOADING
+    if (state.status == ListStatus.initialLoading) {
+      return const Center(
+        key: Key('loading_indicator'),
+        child: CircularProgressIndicator(),
+      );
+    }
+    
+    // 2. Tampilan EMPTY
+    if (state.status == ListStatus.empty) {
+      return const Center(child: Text('Data dari server kosong.'));
+    }
 
+    // 3. Tampilan ERROR & RETRY
+    if (state.status == ListStatus.error) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red, size: 48),
+            const SizedBox(height: 16),
+            Text(
+              'Gagal memuat data:\n${state.errorMessage}', 
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              key: const Key('retry_button'),
+              onPressed: () => ref.read(reportListProvider.notifier).retry(),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Coba Lagi (Retry)'),
+            )
+          ],
+        ),
+      );
+    }
+
+    // 4. Tampilan SUCCESS
     return ListView.builder(
       itemCount: state.reports.length,
       itemBuilder: (context, index) {
@@ -61,11 +96,6 @@ class ReportListPage extends ConsumerWidget {
                     Chip(label: Text(item.type, style: const TextStyle(fontSize: 10)), padding: EdgeInsets.zero,
                       backgroundColor: item.type == 'LOST' ? Colors.red.shade100 : Colors.green.shade100,
                     ),
-                    const SizedBox(width: 8),
-                    if (item.status == 'RESOLVED')
-                      Chip(label: const Text('SELESAI', style: TextStyle(fontSize: 10)), padding: EdgeInsets.zero,
-                        backgroundColor: Colors.blue.shade100,
-                      ),
                   ],
                 )
               ],

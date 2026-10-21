@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import '../../data/report_repository.dart';
 import '../../domain/report_model.dart';
 
@@ -45,11 +46,13 @@ class ReportListNotifier extends StateNotifier<ReportListState> {
     }
   }
 
+  // Fungsi RETRY yang diminta dosen
+  void retry() => loadReports();
+
   Future<void> markAsResolved(ReportModel report) async {
     final updatedReport = ReportModel(
       id: report.id, title: report.title, category: report.category, 
-      location: report.location, description: report.description, type: report.type,
-      status: 'RESOLVED',
+      location: report.location, description: report.description, type: report.type, status: 'RESOLVED',
     );
     await repository.updateReport(updatedReport);
     loadReports();
@@ -61,7 +64,13 @@ class ReportListNotifier extends StateNotifier<ReportListState> {
   }
 }
 
-final reportRepositoryProvider = Provider((ref) => ReportRepository());
+// Injeksi API Client
+final httpClientProvider = Provider((ref) => http.Client());
+
+final reportRepositoryProvider = Provider((ref) {
+  return ReportRepository(client: ref.watch(httpClientProvider));
+});
+
 final reportListProvider = StateNotifierProvider<ReportListNotifier, ReportListState>((ref) {
   return ReportListNotifier(ref.watch(reportRepositoryProvider));
 });

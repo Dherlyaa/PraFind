@@ -1,53 +1,60 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 import '../domain/report_model.dart';
 
 class ReportRepository {
-  static const String _storageKey = 'pradita_reports_data';
+  final http.Client client;
+  final String baseUrl = 'https://api.praditafind.com/v1'; // Dummy URL
 
+  ReportRepository({required this.client});
+
+  // READ (GET dari API)
   Future<List<ReportModel>> fetchReports({String query = ''}) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    final prefs = await SharedPreferences.getInstance();
-    final String? jsonData = prefs.getString(_storageKey);
-    
-    if (jsonData == null) return [];
 
-    final List<dynamic> decodedList = jsonDecode(jsonData);
-    final List<ReportModel> allData = decodedList.map((item) => ReportModel.fromJson(item)).toList();
+    // KODE ASLI DI BAWAH INI (Akan diabaikan saat demo karena sudah di-return di atas)
+    try {
+      final response = await client.get(Uri.parse('$baseUrl/reports'));
 
-    if (query.isEmpty) return allData;
-    return allData.where((item) => item.title.toLowerCase().contains(query.toLowerCase())).toList();
-  }
+      if (response.statusCode == 200) {
+        final List<dynamic> decodedList = jsonDecode(response.body);
+        
+        if (decodedList.isEmpty) return [];
 
-  Future<bool> submitReport(ReportModel report) async {
-    final prefs = await SharedPreferences.getInstance();
-    final List<ReportModel> currentData = await fetchReports();
-    currentData.add(report);
-    return _saveData(prefs, currentData);
-  }
-
-  Future<bool> updateReport(ReportModel updatedReport) async {
-    final prefs = await SharedPreferences.getInstance();
-    final List<ReportModel> currentData = await fetchReports();
-    
-    final index = currentData.indexWhere((r) => r.id == updatedReport.id);
-    if (index != -1) {
-      currentData[index] = updatedReport;
-      return _saveData(prefs, currentData);
+        final allData = decodedList.map((item) => ReportModel.fromJson(item)).toList();
+        
+        if (query.isEmpty) return allData;
+        return allData.where((item) => item.title.toLowerCase().contains(query.toLowerCase())).toList();
+      } else {
+        throw Exception('Gagal memuat data dari API. Status: ${response.statusCode}');
+      }
+    } catch (e) {
+      rethrow;
     }
-    return false;
+  } // <-- Penutup fungsi yang benar ada di paling bawah ini
+
+  // CREATE (POST ke API)
+  Future<bool> submitReport(ReportModel report) async {
+    final response = await client.post(
+      Uri.parse('$baseUrl/reports'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(report.toJson()),
+    );
+    return response.statusCode == 201 || response.statusCode == 200;
   }
 
+  // UPDATE (PUT ke API)
+  Future<bool> updateReport(ReportModel updatedReport) async {
+    final response = await client.put(
+      Uri.parse('$baseUrl/reports/${updatedReport.id}'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(updatedReport.toJson()),
+    );
+    return response.statusCode == 200;
+  }
+
+  // DELETE (DELETE ke API)
   Future<bool> deleteReport(String id) async {
-    final prefs = await SharedPreferences.getInstance();
-    final List<ReportModel> currentData = await fetchReports();
-    
-    currentData.removeWhere((r) => r.id == id);
-    return _saveData(prefs, currentData);
-  }
-
-  Future<bool> _saveData(SharedPreferences prefs, List<ReportModel> data) {
-    final String encodedData = jsonEncode(data.map((r) => r.toJson()).toList());
-    return prefs.setString(_storageKey, encodedData);
+    final response = await client.delete(Uri.parse('$baseUrl/reports/$id'));
+    return response.statusCode == 200;
   }
 }

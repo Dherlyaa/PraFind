@@ -18,13 +18,18 @@ class ReportModel {
   });
 
   factory ReportModel.fromJson(Map<String, dynamic> json) {
+    // Validasi untuk Unit Test: Model Invalid
+    if (!json.containsKey('id') || !json.containsKey('title')) {
+      throw const FormatException('Invalid JSON: Key "id" atau "title" hilang');
+    }
+
     return ReportModel(
-      id: json['id'],
+      id: json['id'].toString(),
       title: json['title'],
-      category: json['category'],
-      location: json['location'],
-      description: json['description'],
-      type: json['type'],
+      category: json['category'] ?? 'Umum',
+      location: json['location'] ?? 'Tidak diketahui',
+      description: json['description'] ?? '',
+      type: json['type'] ?? 'LOST',
       status: json['status'] ?? 'ACTIVE',
     );
   }

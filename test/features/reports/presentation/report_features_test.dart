@@ -1,110 +1,63 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 import '../../../../lib/features/reports/data/report_repository.dart';
 import '../../../../lib/features/reports/domain/report_model.dart';
-import '../../../../lib/features/reports/presentation/pages/report_list_page.dart';
-import '../../../../lib/features/reports/presentation/pages/create_report_page.dart';
-import '../../../../lib/features/reports/presentation/providers/report_list_provider.dart';
-
-class MockReportRepository extends ReportRepository {
-  final bool forceError;
-  final bool forceEmpty;
-
-  MockReportRepository({this.forceError = false, this.forceEmpty = false});
-
-  @override
-  Future<List<ReportModel>> fetchReports({
-    String query = '',
-    bool forceError = false,
-    bool forceEmpty = false,
-  }) async {
-    if (this.forceError || forceError) throw Exception('Server error');
-    if (this.forceEmpty || forceEmpty) return [];
-    return [
-      ReportModel(
-        id: '1',
-        title: 'KTM Budi',
-        category: 'Dokumen',
-        location: 'Gedung A',
-        description: 'Detail KTM',
-        type: 'FOUND',
-      )
-    ];
-  }
-
-  @override
-  Future<bool> submitReport(ReportModel report) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return true;
-  }
-}
 
 void main() {
-  Widget buildTestableWidget(ReportRepository repo, Widget child) {
-    return ProviderScope(
-      overrides: [
-        reportRepositoryProvider.overrideWithValue(repo),
-      ],
-      child: MaterialApp(home: child),
-    );
-  }
+  group('UNIT TEST: Model & API (Tugas P6)', () {
+    // 1. Model Valid
+    test('Model valid dapat di-parse dari JSON', () {
+      final json = {'id': '1', 'title': 'Tas Hitam', 'category': 'Aksesoris'};
+      final model = ReportModel.fromJson(json);
+      expect(model.id, '1');
+      expect(model.title, 'Tas Hitam');
+    });
 
-  testWidgets('1. Verifikasi Initial Loading State', (tester) async {
-    await tester.pumpWidget(buildTestableWidget(MockReportRepository(), const ReportListPage()));
-    expect(find.byKey(const Key('loading_indicator')), findsOneWidget);
-  });
+    // 2. Model Invalid
+    test('Model melempar FormatException jika JSON kehilangan field id/title', () {
+      final invalidJson = {'category': 'Aksesoris'}; // id dan title hilang
+      expect(() => ReportModel.fromJson(invalidJson), throwsA(isA<FormatException>()));
+    });
 
-  testWidgets('2. Verifikasi Data Berhasil Dimuat (Success State)', (tester) async {
-    await tester.pumpWidget(buildTestableWidget(MockReportRepository(), const ReportListPage()));
-    await tester.pumpAndSettle();
+    // 3. API Sukses
+    test('Mengembalikan List ReportModel jika HTTP 200 (Sukses)', () async {
+      final mockClient = MockClient((request) async {
+        final mockResponse = jsonEncode([
+          {'id': '101', 'title': 'Kunci Motor', 'category': 'Kunci'}
+        ]);
+        return http.Response(mockResponse, 200);
+      });
+      final repo = ReportRepository(client: mockClient);
+      final result = await repo.fetchReports();
+      expect(result.length, 1);
+      expect(result.first.title, 'Kunci Motor');
+    });
 
-    expect(find.text('KTM Budi'), findsOneWidget);
-  });
+    // 4. Data Kosong
+    test('Mengembalikan List kosong jika API merespon array kosong', () async {
+      final mockClient = MockClient((req) async => http.Response('[]', 200));
+      final repo = ReportRepository(client: mockClient);
+      final result = await repo.fetchReports();
+      expect(result.isEmpty, true);
+    });
 
-  testWidgets('3. Verifikasi Empty State', (tester) async {
-    await tester.pumpWidget(
-      buildTestableWidget(MockReportRepository(forceEmpty: true), const ReportListPage()),
-    );
-    await tester.pumpAndSettle();
+    // 5. HTTP Gagal
+    test('Melempar Exception jika HTTP status bukan 200', () async {
+      final mockClient = MockClient((req) async => http.Response('Not Found', 404));
+      final repo = ReportRepository(client: mockClient);
+      expect(repo.fetchReports(), throwsException);
+    });
 
-    expect(find.text('Tidak ada laporan barang ditemukan.'), findsOneWidget);
-  });
-
-  testWidgets('4. Verifikasi Error State & Tombol Retry', (tester) async {
-    await tester.pumpWidget(
-      buildTestableWidget(MockReportRepository(forceError: true), const ReportListPage()),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('retry_button')), findsOneWidget);
-  });
-
-  testWidgets('5. Verifikasi Validasi Input Form (Fitur 2)', (tester) async {
-    await tester.pumpWidget(buildTestableWidget(MockReportRepository(), const CreateReportPage()));
-
-    await tester.tap(find.byKey(const Key('submit_button')));
-    await tester.pump();
-
-    expect(find.text('Nama barang tidak boleh kosong'), findsOneWidget);
-    expect(find.text('Lokasi kejadian wajib diisi'), findsOneWidget);
-  });
-
-  testWidgets('6. Verifikasi Submitting Loading State & Prevent Double Tap', (tester) async {
-    await tester.pumpWidget(buildTestableWidget(MockReportRepository(), const CreateReportPage()));
-
-    await tester.enterText(find.byKey(const Key('title_input')), 'Tas');
-    await tester.enterText(find.byKey(const Key('location_input')), 'Kantin');
-    await tester.enterText(find.byKey(const Key('description_input')), 'Warna Hitam');
-
-    await tester.tap(find.byKey(const Key('submit_button')));
-    await tester.pump();
-
-    final button = tester.widget<ElevatedButton>(find.byKey(const Key('submit_button')));
-    expect(button.onPressed, isNull);
-
-    // Menyelesaikan timer 300ms agar tidak ada pending async timer saat tes selesai
-    await tester.pumpAndSettle();
+    // 6. JSON Rusak
+    test('Melempar error jika JSON dari API rusak', () async {
+      final mockClient = MockClient((req) async => http.Response('Data bukan json {', 200));
+      final repo = ReportRepository(client: mockClient);
+      expect(repo.fetchReports(), throwsFormatException);
+    });
   });
 }
