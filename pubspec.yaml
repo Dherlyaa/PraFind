@@ -8,7 +8,11 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_riverpod: ^2.5.1
+  geocoding: ^5.0.0
+  geolocator: ^14.1.2
   http: ^1.6.0
+  image_picker: ^1.2.4
+  local_auth: ^3.0.2
   shared_preferences: ^2.5.6
 
 dev_dependencies:

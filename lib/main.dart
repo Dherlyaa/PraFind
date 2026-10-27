@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'features/reports/presentation/pages/report_list_page.dart';
+import 'features/auth/presentation/pages/login_page.dart';
 
 void main() {
   runApp(
@@ -22,7 +22,7 @@ class PraditaFindApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const ReportListPage(),
+      home: const LoginPage(), // Berubah dari ReportListPage ke LoginPage
     );
   }
 }
