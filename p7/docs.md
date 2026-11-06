@@ -63,3 +63,7 @@ Sebagai arsitektur penyimpan data, aplikasi mengimplementasikan koneksi HTTP men
   * Membuktikan bahwa kode integrasi jaringan (API Client) berfungsi sempurna layaknya berkomunikasi dengan *server* sungguhan.
   * Memungkinkan aplikasi untuk didemokan secara *real-time*; data yang dibuat di *form* akan langsung tersimpan di *server cloud* dan muncul pada daftar laporan, tanpa terhambat oleh proses pembuatan *custom backend* (Node.js/PHP) maupun kendala jaringan *localhost* pada emulator.
   * Menyimulasikan latensi *server* (network delay) yang nyata untuk menguji keandalan manajemen *State* aplikasi (Riverpod).
+
+**Lampiran:** 
+*   *Link Video Demo 3 fitur advanced (Biometrik, Kamera, GPS) serta integrasi API nyata:* 
+https://drive.google.com/file/d/1t2i_fakasDU_C_m7ItvaUAiC4VX-DrhE/view?usp=drive_link
