@@ -1,60 +1,65 @@
-import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../domain/report_model.dart';
 
 class ReportRepository {
   final http.Client client;
-  final String baseUrl = 'https://api.praditafind.com/v1'; // Dummy URL
+  final String baseUrl = 'https://6ae42e2d933120ae20f98e78.mockapi.io';
+
+  // Data dummy yang disimpan di RAM selama aplikasi berjalan
+  static final List<ReportModel> _mockData = [
+    ReportModel(
+      id: '1',
+      title: 'KTM Mahasiswa',
+      category: 'Dokumen',
+      location: 'Perpustakaan Lantai 2',
+      description: 'Ditemukan KTM atas nama Budi',
+      type: 'FOUND',
+      status: 'OPEN',
+    ),
+    ReportModel(
+      id: '2',
+      title: 'Charger Laptop MacBook',
+      category: 'Elektronik',
+      location: 'Ruang Kelas A301',
+      description: 'Kehilangan charger warna putih, mohon infonya.',
+      type: 'LOST',
+      status: 'OPEN',
+    ),
+  ];
 
   ReportRepository({required this.client});
 
-  // READ (GET dari API)
+  // READ (GET lokal)
   Future<List<ReportModel>> fetchReports({String query = ''}) async {
+    await Future.delayed(const Duration(seconds: 1)); // Simulasi loading
+    if (query.isEmpty) return _mockData;
+    return _mockData
+        .where((item) => item.title.toLowerCase().contains(query.toLowerCase()))
+        .toList();
+  }
 
-    // KODE ASLI DI BAWAH INI (Akan diabaikan saat demo karena sudah di-return di atas)
-    try {
-      final response = await client.get(Uri.parse('$baseUrl/reports'));
-
-      if (response.statusCode == 200) {
-        final List<dynamic> decodedList = jsonDecode(response.body);
-        
-        if (decodedList.isEmpty) return [];
-
-        final allData = decodedList.map((item) => ReportModel.fromJson(item)).toList();
-        
-        if (query.isEmpty) return allData;
-        return allData.where((item) => item.title.toLowerCase().contains(query.toLowerCase())).toList();
-      } else {
-        throw Exception('Gagal memuat data dari API. Status: ${response.statusCode}');
-      }
-    } catch (e) {
-      rethrow;
-    }
-  } // <-- Penutup fungsi yang benar ada di paling bawah ini
-
-  // CREATE (POST ke API)
+  // CREATE (POST lokal)
   Future<bool> submitReport(ReportModel report) async {
-    final response = await client.post(
-      Uri.parse('$baseUrl/reports'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(report.toJson()),
-    );
-    return response.statusCode == 201 || response.statusCode == 200;
+    await Future.delayed(const Duration(seconds: 1));
+    _mockData.insert(0, report);
+    return true;
   }
 
-  // UPDATE (PUT ke API)
+  // UPDATE (PUT lokal)
   Future<bool> updateReport(ReportModel updatedReport) async {
-    final response = await client.put(
-      Uri.parse('$baseUrl/reports/${updatedReport.id}'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(updatedReport.toJson()),
-    );
-    return response.statusCode == 200;
+    await Future.delayed(const Duration(milliseconds: 500));
+    final index = _mockData.indexWhere((r) => r.id == updatedReport.id);
+    if (index != -1) {
+      _mockData[index] = updatedReport;
+      return true;
+    }
+    return false;
   }
 
-  // DELETE (DELETE ke API)
+  // DELETE (DELETE lokal)
   Future<bool> deleteReport(String id) async {
-    final response = await client.delete(Uri.parse('$baseUrl/reports/$id'));
-    return response.statusCode == 200;
+    await Future.delayed(const Duration(milliseconds: 500));
+    _mockData.removeWhere((r) => r.id == id);
+    return true;
   }
 }

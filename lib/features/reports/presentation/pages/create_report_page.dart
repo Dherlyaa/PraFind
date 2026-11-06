@@ -1,10 +1,10 @@
-import 'package:geocoding/geocoding.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
+
 import '../providers/create_report_provider.dart';
 import '../../domain/report_model.dart';
 
@@ -23,7 +23,6 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
   String _selectedType = 'LOST';
   String _selectedCategory = 'Elektronik';
 
-  // State untuk Fitur Advanced
   XFile? _imageFile;
   bool _isLocationLoading = false;
   final ImagePicker _picker = ImagePicker();
@@ -36,7 +35,6 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
     super.dispose();
   }
 
-  // Fungsi Fitur Kamera/Galeri
   Future<void> _pickImage(ImageSource source) async {
     try {
       final pickedFile = await _picker.pickImage(source: source, imageQuality: 70);
@@ -52,7 +50,6 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
     }
   }
 
-  // Fungsi Fitur GPS Lokasi
   Future<void> _getCurrentLocation() async {
     setState(() => _isLocationLoading = true);
     try {
@@ -74,17 +71,16 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
       }
 
       Position position = await Geolocator.getCurrentPosition();
-      List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
-
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks[0];
-        setState(() {
-          _locationController.text = '${place.street}, ${place.subLocality}, ${place.locality}';
-        });
-      }
+      
+      setState(() {
+        _locationController.text = '${position.latitude}, ${position.longitude}';
+      });
+      
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())), // Pesan error aksesibel via teks
+        );
       }
     } finally {
       if (mounted) setState(() => _isLocationLoading = false);
@@ -102,15 +98,19 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
         type: _selectedType,
       );
 
-      // Note: Di tahap MVP, gambar (_imageFile) belum diunggah ke backend, 
-      // hanya divalidasi dan ditampilkan di UI.
       final success = await ref.read(createReportProvider.notifier).submitReport(report);
 
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Laporan Berhasil Dikirim!')),
-        );
-        Navigator.pop(context);
+      if (mounted) {
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Laporan Berhasil Dikirim!')),
+          );
+          Navigator.pop(context);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Gagal menyimpan laporan. Coba lagi.')),
+          );
+        }
       }
     }
   }
@@ -120,141 +120,185 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
     final formState = ref.watch(createReportProvider);
     final isSubmitting = formState.status == FormSubmitStatus.submitting;
 
+    // Komponen Input Data (Kiri pada layar lebar)
+    Widget formInputs = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          key: const Key('title_input'),
+          controller: _titleController,
+          enabled: !isSubmitting,
+          textInputAction: TextInputAction.next,
+          decoration: const InputDecoration(
+            labelText: 'Nama Barang',
+            helperText: 'Contoh: KTM, Charger, Dompet',
+            border: OutlineInputBorder(),
+          ),
+          validator: (val) {
+            if (val == null || val.trim().isEmpty) return 'Nama barang tidak boleh kosong';
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        DropdownButtonFormField<String>(
+          value: _selectedCategory,
+          decoration: const InputDecoration(
+            labelText: 'Kategori',
+            border: OutlineInputBorder(),
+          ),
+          items: ['Elektronik', 'Dokumen', 'Kunci', 'Pakaian']
+              .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
+              .toList(),
+          onChanged: isSubmitting ? null : (val) => setState(() => _selectedCategory = val!),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: TextFormField(
+                key: const Key('location_input'),
+                controller: _locationController,
+                enabled: !isSubmitting,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'Lokasi Kejadian',
+                  helperText: 'Gunakan tombol di samping untuk akurasi',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) return 'Lokasi kejadian wajib diisi';
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            Padding(
+              padding: const EdgeInsets.only(top: 4.0),
+              child: IconButton.filledTonal(
+                onPressed: _isLocationLoading || isSubmitting ? null : _getCurrentLocation,
+                icon: _isLocationLoading
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.my_location),
+                tooltip: 'Gunakan lokasi saat ini',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          key: const Key('description_input'),
+          controller: _descriptionController,
+          enabled: !isSubmitting,
+          maxLines: 3,
+          textInputAction: TextInputAction.done,
+          decoration: const InputDecoration(
+            labelText: 'Deskripsi',
+            helperText: 'Jelaskan ciri-ciri barang secara detail',
+            border: OutlineInputBorder(),
+          ),
+          validator: (val) {
+            if (val == null || val.trim().isEmpty) return 'Deskripsi wajib diisi';
+            return null;
+          },
+        ),
+      ],
+    );
+
+    // Komponen Media & Aksi (Kanan pada layar lebar)
+    Widget formActions = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          height: 180,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: _imageFile != null
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: kIsWeb
+                      ? Image.network(_imageFile!.path, fit: BoxFit.cover)
+                      : Image.file(File(_imageFile!.path), fit: BoxFit.cover),
+                )
+              : const Center(child: Text('Belum ada foto yang dipilih')),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            TextButton.icon(
+              onPressed: isSubmitting ? null : () => _pickImage(ImageSource.camera),
+              icon: const Icon(Icons.camera_alt),
+              label: const Text('Kamera'),
+            ),
+            TextButton.icon(
+              onPressed: isSubmitting ? null : () => _pickImage(ImageSource.gallery),
+              icon: const Icon(Icons.photo),
+              label: const Text('Galeri'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        ElevatedButton(
+          key: const Key('submit_button'),
+          onPressed: isSubmitting ? null : _submitForm,
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            minimumSize: const Size.fromHeight(48), // Target sentuh minimal 48x48px
+          ),
+          child: isSubmitting
+              ? const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                    SizedBox(width: 12),
+                    Text('Menyimpan...'),
+                  ],
+                )
+              : const Text('Kirim Laporan'),
+        ),
+      ],
+    );
+
     return Scaffold(
+      resizeToAvoidBottomInset: true, // Menangani Keyboard
       appBar: AppBar(title: const Text('Buat Laporan Baru')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+      body: SafeArea( // Menangani area inset sistem
         child: Form(
           key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // --- UI Fitur Gambar ---
-              Container(
-                height: 150,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: _imageFile != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: kIsWeb
-                            ? Image.network(_imageFile!.path, fit: BoxFit.cover)
-                            : Image.file(File(_imageFile!.path), fit: BoxFit.cover),
-                      )
-                    : const Center(child: Text('Belum ada foto yang dipilih')),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  TextButton.icon(
-                    onPressed: isSubmitting ? null : () => _pickImage(ImageSource.camera),
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text('Kamera'),
-                  ),
-                  TextButton.icon(
-                    onPressed: isSubmitting ? null : () => _pickImage(ImageSource.gallery),
-                    icon: const Icon(Icons.photo),
-                    label: const Text('Galeri'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // ------------------------
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isWideScreen = constraints.maxWidth >= 700; // Breakpoint adaptif
 
-              TextFormField(
-                key: const Key('title_input'),
-                controller: _titleController,
-                enabled: !isSubmitting,
-                decoration: const InputDecoration(
-                  labelText: 'Nama Barang',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) {
-                    return 'Nama barang tidak boleh kosong';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                decoration: const InputDecoration(
-                  labelText: 'Kategori',
-                  border: OutlineInputBorder(),
-                ),
-                items: ['Elektronik', 'Dokumen', 'Kunci', 'Pakaian']
-                    .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
-                    .toList(),
-                onChanged: isSubmitting ? null : (val) => setState(() => _selectedCategory = val!),
-              ),
-              const SizedBox(height: 16),
-
-              // --- UI Fitur Lokasi ---
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      key: const Key('location_input'),
-                      controller: _locationController,
-                      enabled: !isSubmitting,
-                      decoration: const InputDecoration(
-                        labelText: 'Lokasi Kejadian',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (val) {
-                        if (val == null || val.trim().isEmpty) {
-                          return 'Lokasi kejadian wajib diisi';
-                        }
-                        return null;
-                      },
-                    ),
+              return Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1100), // Pembatas lebar untuk layar sangat besar
+                  child: SingleChildScrollView(
+                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag, // Menutup keyboard saat di-scroll
+                    padding: const EdgeInsets.all(16.0),
+                    child: isWideScreen
+                        ? Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(flex: 3, child: formInputs),
+                              const SizedBox(width: 32),
+                              Expanded(flex: 2, child: formActions),
+                            ],
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              formInputs,
+                              const SizedBox(height: 24),
+                              formActions,
+                            ],
+                          ),
                   ),
-                  const SizedBox(width: 8),
-                  IconButton.filledTonal(
-                    onPressed: _isLocationLoading || isSubmitting ? null : _getCurrentLocation,
-                    icon: _isLocationLoading
-                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.my_location),
-                    tooltip: 'Gunakan lokasi saat ini',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // -----------------------
-
-              TextFormField(
-                key: const Key('description_input'),
-                controller: _descriptionController,
-                enabled: !isSubmitting,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Deskripsi',
-                  border: OutlineInputBorder(),
                 ),
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) {
-                    return 'Deskripsi wajib diisi';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                key: const Key('submit_button'),
-                onPressed: isSubmitting ? null : _submitForm,
-                style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(16)),
-                child: isSubmitting
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Kirim Laporan'),
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),

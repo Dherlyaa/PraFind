@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb; // Impor kIsWeb ditambahkan
 import 'package:local_auth/local_auth.dart';
 import '../../../reports/presentation/pages/report_list_page.dart';
 
@@ -16,6 +17,23 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _authenticate() async {
     setState(() => _isAuthenticating = true);
+
+    // --- BYPASS UNTUK WEB ---
+    if (kIsWeb) {
+      setState(() => _isAuthenticating = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Login Berhasil (Web Bypass)!')),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ReportListPage()),
+        );
+      }
+      return; // Hentikan fungsi di sini agar tidak memanggil local_auth
+    }
+    // ------------------------
+
     bool authenticated = false;
 
     try {

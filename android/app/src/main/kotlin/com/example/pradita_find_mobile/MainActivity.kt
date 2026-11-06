@@ -1,4 +1,4 @@
-package com.example.prafind 
+package com.example.pradita_find_mobile
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 
