@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../providers/create_report_provider.dart';
 import '../../domain/report_model.dart';
 import '../../domain/report_validator.dart';
+import '../../../../core/utils/snackbar_helper.dart';
 
 class CreateReportPage extends ConsumerStatefulWidget {
   const CreateReportPage({super.key});
