@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../providers/create_report_provider.dart';
 import '../../domain/report_model.dart';
+import '../../domain/report_validator.dart';
 
 class CreateReportPage extends ConsumerStatefulWidget {
   const CreateReportPage({super.key});
@@ -71,15 +72,14 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
       }
 
       Position position = await Geolocator.getCurrentPosition();
-      
+
       setState(() {
         _locationController.text = '${position.latitude}, ${position.longitude}';
       });
-      
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())), // Pesan error aksesibel via teks
+          SnackBar(content: Text(e.toString())),
         );
       }
     } finally {
@@ -134,10 +134,7 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
             helperText: 'Contoh: KTM, Charger, Dompet',
             border: OutlineInputBorder(),
           ),
-          validator: (val) {
-            if (val == null || val.trim().isEmpty) return 'Nama barang tidak boleh kosong';
-            return null;
-          },
+          validator: ReportValidator.validateTitle,
         ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
@@ -166,10 +163,7 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
                   helperText: 'Gunakan tombol di samping untuk akurasi',
                   border: OutlineInputBorder(),
                 ),
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) return 'Lokasi kejadian wajib diisi';
-                  return null;
-                },
+                validator: ReportValidator.validateLocation,
               ),
             ),
             const SizedBox(width: 8),
@@ -197,10 +191,7 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
             helperText: 'Jelaskan ciri-ciri barang secara detail',
             border: OutlineInputBorder(),
           ),
-          validator: (val) {
-            if (val == null || val.trim().isEmpty) return 'Deskripsi wajib diisi';
-            return null;
-          },
+          validator: ReportValidator.validateDescription,
         ),
       ],
     );
@@ -246,7 +237,7 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
           onPressed: isSubmitting ? null : _submitForm,
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 16),
-            minimumSize: const Size.fromHeight(48), // Target sentuh minimal 48x48px
+            minimumSize: const Size.fromHeight(48),
           ),
           child: isSubmitting
               ? const Row(
@@ -263,20 +254,20 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
     );
 
     return Scaffold(
-      resizeToAvoidBottomInset: true, // Menangani Keyboard
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(title: const Text('Buat Laporan Baru')),
-      body: SafeArea( // Menangani area inset sistem
+      body: SafeArea(
         child: Form(
           key: _formKey,
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final isWideScreen = constraints.maxWidth >= 700; // Breakpoint adaptif
+              final isWideScreen = constraints.maxWidth >= 700;
 
               return Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1100), // Pembatas lebar untuk layar sangat besar
+                  constraints: const BoxConstraints(maxWidth: 1100),
                   child: SingleChildScrollView(
-                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag, // Menutup keyboard saat di-scroll
+                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                     padding: const EdgeInsets.all(16.0),
                     child: isWideScreen
                         ? Row(
