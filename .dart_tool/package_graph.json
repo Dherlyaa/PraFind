@@ -5,7 +5,7 @@
   "packages": [
     {
       "name": "pradita_find_mobile",
-      "version": "0.0.0",
+      "version": "1.0.0+2",
       "dependencies": [
         "flutter",
         "flutter_riverpod",
@@ -17,6 +17,7 @@
         "shared_preferences"
       ],
       "devDependencies": [
+        "flutter_launcher_icons",
         "flutter_lints",
         "flutter_test"
       ]
@@ -877,6 +878,76 @@
       "dependencies": [
         "collection",
         "meta"
+      ]
+    },
+    {
+      "name": "flutter_launcher_icons",
+      "version": "0.14.4",
+      "dependencies": [
+        "args",
+        "checked_yaml",
+        "cli_util",
+        "image",
+        "json_annotation",
+        "path",
+        "yaml"
+      ]
+    },
+    {
+      "name": "cli_util",
+      "version": "0.4.2",
+      "dependencies": [
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "checked_yaml",
+      "version": "2.0.4",
+      "dependencies": [
+        "json_annotation",
+        "source_span",
+        "yaml"
+      ]
+    },
+    {
+      "name": "yaml",
+      "version": "3.1.4",
+      "dependencies": [
+        "collection",
+        "source_span",
+        "string_scanner"
+      ]
+    },
+    {
+      "name": "json_annotation",
+      "version": "4.12.0",
+      "dependencies": [
+        "meta"
+      ]
+    },
+    {
+      "name": "image",
+      "version": "4.13.1",
+      "dependencies": [
+        "archive"
+      ]
+    },
+    {
+      "name": "archive",
+      "version": "4.7.1",
+      "dependencies": [
+        "path",
+        "posix"
+      ]
+    },
+    {
+      "name": "posix",
+      "version": "6.5.4",
+      "dependencies": [
+        "ffi",
+        "meta",
+        "path"
       ]
     }
   ],

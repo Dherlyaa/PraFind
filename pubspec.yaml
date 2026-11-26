@@ -1,6 +1,9 @@
 name: pradita_find_mobile
 description: Aplikasi Barang Hilang Kampus Pradita
 
+# Identitas versi & nomor build untuk pelacakan Release Candidate (RC.2)
+version: 1.0.0+2
+
 environment:
   sdk: '>=3.0.0 <4.0.0'
 
@@ -19,3 +22,21 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
+  # Paket generator otomatis untuk launcher icon & adaptive icon Android
+  flutter_launcher_icons: ^0.14.3
+
+# Konfigurasi ikon aplikasi (launcher icon) untuk Android
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/images/logo_prafind.png"
+  adaptive_icon_background: "#FCF8EC"
+  adaptive_icon_foreground: "assets/images/logo_prafind.png"
+
+# Konfigurasi font ikon Material Design dan aset gambar untuk build release
+flutter:
+  uses-material-design: true
+
+  # Pendaftaran folder aset gambar aplikasi (logo & ilustrasi fitur)
+  assets:
+    - assets/images/

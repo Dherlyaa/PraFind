@@ -98,7 +98,16 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.security, size: 100, color: Colors.blue),
+              // Menampilkan logo resmi PraFind (Pradita Find) dari aset lokal
+              // dengan fallback ikon keamanan apabila aset gagal dimuat
+              Image.asset(
+                'assets/images/logo_prafind.png',
+                width: 140,
+                height: 140,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.security, size: 100, color: Colors.blue),
+              ),
               const SizedBox(height: 24),
               const Text(
                 'Pradita Find',
