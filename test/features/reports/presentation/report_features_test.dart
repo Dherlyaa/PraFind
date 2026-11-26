@@ -1,12 +1,10 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
-import '../../../../lib/features/reports/data/report_repository.dart';
-import '../../../../lib/features/reports/domain/report_model.dart';
+import 'package:pradita_find_mobile/features/reports/data/report_repository.dart';
+import 'package:pradita_find_mobile/features/reports/domain/report_model.dart';
 
 void main() {
   group('UNIT TEST: Model & API (Tugas P6)', () {

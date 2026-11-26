@@ -22,7 +22,7 @@ class PraditaFindApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const LoginPage(), // Berubah dari ReportListPage ke LoginPage
+      home: const LoginPage(),
     );
   }
 }

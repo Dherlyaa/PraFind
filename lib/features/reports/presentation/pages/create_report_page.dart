@@ -40,10 +40,12 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
   Future<void> _pickImage(ImageSource source) async {
     try {
       final pickedFile = await _picker.pickImage(source: source, imageQuality: 70);
+      if (!mounted) return;
       if (pickedFile != null) {
         setState(() => _imageFile = pickedFile);
       }
     } catch (e) {
+      if (!mounted) return;
       showAppSnackBar(context, 'Gagal mengambil gambar: $e');
     }
   }
@@ -52,10 +54,12 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
     setState(() => _isLocationLoading = true);
     try {
       final position = await _fetchDevicePosition();
+      if (!mounted) return;
       setState(() {
         _locationController.text = '${position.latitude}, ${position.longitude}';
       });
     } catch (e) {
+      if (!mounted) return;
       showAppSnackBar(context, e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _isLocationLoading = false);
@@ -170,7 +174,7 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
         ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
-          value: _selectedCategory,
+          initialValue: _selectedCategory,
           decoration: const InputDecoration(
             labelText: 'Kategori',
             border: OutlineInputBorder(),
