@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart' show kIsWeb; // Impor kIsWeb ditambahkan
 import 'package:local_auth/local_auth.dart';
+
+import '../../../../core/utils/snackbar_helper.dart';
 import '../../../reports/presentation/pages/report_list_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -16,74 +18,59 @@ class _LoginPageState extends State<LoginPage> {
   bool _isAuthenticating = false;
 
   Future<void> _authenticate() async {
+    if (_isAuthenticating) return;
     setState(() => _isAuthenticating = true);
 
-    // --- BYPASS UNTUK WEB ---
     if (kIsWeb) {
-      setState(() => _isAuthenticating = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login Berhasil (Web Bypass)!')),
-        );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const ReportListPage()),
-        );
+        setState(() => _isAuthenticating = false);
+        _onLoginSuccess('Login Berhasil (Web Bypass)!');
       }
-      return; // Hentikan fungsi di sini agar tidak memanggil local_auth
+      return;
     }
-    // ------------------------
-
-    bool authenticated = false;
 
     try {
-      final bool canAuthenticateWithBiometrics = await _auth.canCheckBiometrics;
-      final bool canAuthenticate =
-          canAuthenticateWithBiometrics || await _auth.isDeviceSupported();
+      final authenticated = await _performBiometricAuth();
+      if (!mounted) return;
 
-      if (!canAuthenticate) {
-        throw Exception('Perangkat ini tidak mendukung fitur biometrik.');
+      setState(() => _isAuthenticating = false);
+      if (authenticated) {
+        _onLoginSuccess('Login Berhasil!');
+      } else {
+        showAppSnackBar(context, 'Autentikasi dibatalkan atau gagal.');
       }
-
-      authenticated = await _auth.authenticate(
-        localizedReason:
-            'Pindai sidik jari atau wajah Anda untuk masuk ke Pradita Find',
-      );
     } on PlatformException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.message}')),
-        );
-      }
+      if (!mounted) return;
       setState(() => _isAuthenticating = false);
-      return;
+      showAppSnackBar(context, 'Error: ${e.message ?? 'Gagal autentikasi'}');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
-      }
+      if (!mounted) return;
       setState(() => _isAuthenticating = false);
-      return;
+      showAppSnackBar(context, e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  Future<bool> _performBiometricAuth() async {
+    final canAuthenticateWithBiometrics = await _auth.canCheckBiometrics;
+    final canAuthenticate =
+        canAuthenticateWithBiometrics || await _auth.isDeviceSupported();
+
+    if (!canAuthenticate) {
+      throw Exception('Perangkat ini tidak mendukung fitur biometrik.');
     }
 
-    setState(() => _isAuthenticating = false);
+    return _auth.authenticate(
+      localizedReason:
+          'Pindai sidik jari atau wajah Anda untuk masuk ke Pradita Find',
+    );
+  }
 
-    if (authenticated && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login Berhasil!')),
-      );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const ReportListPage()),
-      );
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Autentikasi dibatalkan atau gagal.')),
-        );
-      }
-    }
+  void _onLoginSuccess(String message) {
+    showAppSnackBar(context, message);
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const ReportListPage()),
+    );
   }
 
   @override
@@ -104,24 +91,27 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 8),
               const Text('Silakan login untuk melanjutkan'),
               const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: _isAuthenticating ? null : _authenticate,
-                icon: _isAuthenticating
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.fingerprint),
-                label: const Text('Login dengan Biometrik'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 24, vertical: 16),
-                ),
-              ),
+              _buildLoginButton(),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildLoginButton() {
+    return ElevatedButton.icon(
+      onPressed: _isAuthenticating ? null : _authenticate,
+      icon: _isAuthenticating
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.fingerprint),
+      label: const Text('Login dengan Biometrik'),
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       ),
     );
   }
