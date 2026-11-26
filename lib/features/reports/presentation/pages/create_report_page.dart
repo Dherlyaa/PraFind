@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../../core/utils/app_logger.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../domain/report_model.dart';
 import '../../domain/report_validator.dart';
@@ -38,27 +39,48 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
+    AppLogger.info('CreateReport', 'Membuka pemilih gambar (${source.name})');
     try {
       final pickedFile = await _picker.pickImage(source: source, imageQuality: 70);
       if (!mounted) return;
       if (pickedFile != null) {
+        AppLogger.info('CreateReport', 'Gambar berhasil dipilih: ${pickedFile.name}');
         setState(() => _imageFile = pickedFile);
+      } else {
+        AppLogger.info('CreateReport', 'Pengambilan gambar dibatalkan pengguna');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'CreateReport',
+        'Gagal mengambil gambar',
+        error: e,
+        stackTrace: stackTrace,
+      );
       if (!mounted) return;
       showAppSnackBar(context, 'Gagal mengambil gambar: $e');
     }
   }
 
   Future<void> _getCurrentLocation() async {
+    AppLogger.info('CreateReport', 'Memulai pengambilan lokasi GPS');
     setState(() => _isLocationLoading = true);
     try {
       final position = await _fetchDevicePosition();
       if (!mounted) return;
+      AppLogger.info(
+        'CreateReport',
+        'Lokasi GPS berhasil didapatkan: ${position.latitude}, ${position.longitude}',
+      );
       setState(() {
         _locationController.text = '${position.latitude}, ${position.longitude}';
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'CreateReport',
+        'Gagal mengambil lokasi GPS',
+        error: e,
+        stackTrace: stackTrace,
+      );
       if (!mounted) return;
       showAppSnackBar(context, e.toString().replaceFirst('Exception: ', ''));
     } finally {
@@ -98,13 +120,19 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
       type: _selectedType,
     );
 
+    AppLogger.info(
+      'CreateReport',
+      'Mengirim laporan baru: "${report.title}" (${report.category})',
+    );
     final success = await ref.read(createReportProvider.notifier).submitReport(report);
     if (!mounted) return;
 
     if (success) {
+      AppLogger.info('CreateReport', 'Laporan berhasil disimpan (id: ${report.id})');
       showAppSnackBar(context, 'Laporan Berhasil Dikirim!');
       Navigator.pop(context);
     } else {
+      AppLogger.error('CreateReport', 'Gagal menyimpan laporan (id: ${report.id})');
       showAppSnackBar(context, 'Gagal menyimpan laporan. Coba lagi.');
     }
   }

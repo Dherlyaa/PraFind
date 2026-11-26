@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../../../core/utils/app_logger.dart';
 import '../domain/report_model.dart';
 
 class ReportRepository {
@@ -32,26 +33,54 @@ class ReportRepository {
   ReportRepository({required this.client});
 
   Future<List<ReportModel>> fetchReports({String query = ''}) async {
-    final response = await client.get(_reportsUri());
+    final uri = _reportsUri();
+    AppLogger.info('ReportRepository', 'fetchReports dipanggil (URI: $uri, query: "$query")');
+
+    final response = await client.get(uri);
     if (response.statusCode != 200) {
+      AppLogger.error(
+        'ReportRepository',
+        'Gagal memuat laporan: HTTP ${response.statusCode}',
+      );
       throw Exception('Gagal memuat laporan (HTTP ${response.statusCode})');
     }
 
-    final List<dynamic> decoded = jsonDecode(response.body) as List<dynamic>;
-    final reports = decoded
-        .map((item) => ReportModel.fromJson(item as Map<String, dynamic>))
-        .toList();
+    try {
+      final List<dynamic> decoded = jsonDecode(response.body) as List<dynamic>;
+      final reports = decoded
+          .map((item) => ReportModel.fromJson(item as Map<String, dynamic>))
+          .toList();
 
-    return _filterByQuery(reports, query);
+      AppLogger.info('ReportRepository', 'Berhasil memuat ${reports.length} laporan');
+      return _filterByQuery(reports, query);
+    } on FormatException catch (e, stackTrace) {
+      AppLogger.error(
+        'ReportRepository',
+        'FormatException saat mem-parsing JSON laporan',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'ReportRepository',
+        'Kesalahan saat memproses data laporan',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
   }
 
   Future<bool> submitReport(ReportModel report) async {
+    AppLogger.info('ReportRepository', 'submitReport dipanggil: ${report.title}');
     await _simulateNetworkDelay(const Duration(seconds: 1));
     _mockData.insert(0, report);
     return true;
   }
 
   Future<bool> updateReport(ReportModel updatedReport) async {
+    AppLogger.info('ReportRepository', 'updateReport dipanggil (id: ${updatedReport.id})');
     await _simulateNetworkDelay(const Duration(milliseconds: 500));
     final index = _findReportIndexById(updatedReport.id);
     if (index == -1) return false;
@@ -61,6 +90,7 @@ class ReportRepository {
   }
 
   Future<bool> deleteReport(String id) async {
+    AppLogger.info('ReportRepository', 'deleteReport dipanggil (id: $id)');
     await _simulateNetworkDelay(const Duration(milliseconds: 500));
     final index = _findReportIndexById(id);
     if (index == -1) return false;

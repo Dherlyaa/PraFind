@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 
+import '../../../../core/utils/app_logger.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../reports/presentation/pages/report_list_page.dart';
 
@@ -19,6 +20,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _authenticate() async {
     if (_isAuthenticating) return;
+    AppLogger.info('Auth', 'Memulai proses autentikasi');
     setState(() => _isAuthenticating = true);
 
     if (kIsWeb) {
@@ -37,13 +39,26 @@ class _LoginPageState extends State<LoginPage> {
       if (authenticated) {
         _onLoginSuccess('Login Berhasil!');
       } else {
+        AppLogger.warn('Auth', 'Autentikasi dibatalkan atau gagal oleh pengguna');
         showAppSnackBar(context, 'Autentikasi dibatalkan atau gagal.');
       }
-    } on PlatformException catch (e) {
+    } on PlatformException catch (e, stackTrace) {
+      AppLogger.error(
+        'Auth',
+        'PlatformException saat autentikasi: ${e.code} - ${e.message}',
+        error: e,
+        stackTrace: stackTrace,
+      );
       if (!mounted) return;
       setState(() => _isAuthenticating = false);
       showAppSnackBar(context, 'Error: ${e.message ?? 'Gagal autentikasi'}');
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Auth',
+        'Terjadi kesalahan saat autentikasi',
+        error: e,
+        stackTrace: stackTrace,
+      );
       if (!mounted) return;
       setState(() => _isAuthenticating = false);
       showAppSnackBar(context, e.toString().replaceFirst('Exception: ', ''));
@@ -66,6 +81,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _onLoginSuccess(String message) {
+    AppLogger.info('Auth', 'Autentikasi berhasil: $message');
     showAppSnackBar(context, message);
     Navigator.pushReplacement(
       context,
