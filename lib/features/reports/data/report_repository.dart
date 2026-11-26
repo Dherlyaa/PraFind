@@ -1,11 +1,13 @@
+import 'dart:convert';
+
 import 'package:http/http.dart' as http;
+
 import '../domain/report_model.dart';
 
 class ReportRepository {
   final http.Client client;
   final String baseUrl = 'https://6ae42e2d933120ae20f98e78.mockapi.io';
 
-  // Data dummy yang disimpan di RAM selama aplikasi berjalan
   static final List<ReportModel> _mockData = [
     ReportModel(
       id: '1',
@@ -29,37 +31,59 @@ class ReportRepository {
 
   ReportRepository({required this.client});
 
-  // READ (GET lokal)
   Future<List<ReportModel>> fetchReports({String query = ''}) async {
-    await Future.delayed(const Duration(seconds: 1)); // Simulasi loading
-    if (query.isEmpty) return _mockData;
-    return _mockData
-        .where((item) => item.title.toLowerCase().contains(query.toLowerCase()))
+    final response = await client.get(_reportsUri());
+    if (response.statusCode != 200) {
+      throw Exception('Gagal memuat laporan (HTTP ${response.statusCode})');
+    }
+
+    final List<dynamic> decoded = jsonDecode(response.body) as List<dynamic>;
+    final reports = decoded
+        .map((item) => ReportModel.fromJson(item as Map<String, dynamic>))
         .toList();
+
+    return _filterByQuery(reports, query);
   }
 
-  // CREATE (POST lokal)
   Future<bool> submitReport(ReportModel report) async {
-    await Future.delayed(const Duration(seconds: 1));
+    await _simulateNetworkDelay(const Duration(seconds: 1));
     _mockData.insert(0, report);
     return true;
   }
 
-  // UPDATE (PUT lokal)
   Future<bool> updateReport(ReportModel updatedReport) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    final index = _mockData.indexWhere((r) => r.id == updatedReport.id);
-    if (index != -1) {
-      _mockData[index] = updatedReport;
-      return true;
-    }
-    return false;
+    await _simulateNetworkDelay(const Duration(milliseconds: 500));
+    final index = _findReportIndexById(updatedReport.id);
+    if (index == -1) return false;
+
+    _mockData[index] = updatedReport;
+    return true;
   }
 
-  // DELETE (DELETE lokal)
   Future<bool> deleteReport(String id) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    _mockData.removeWhere((r) => r.id == id);
+    await _simulateNetworkDelay(const Duration(milliseconds: 500));
+    final index = _findReportIndexById(id);
+    if (index == -1) return false;
+
+    _mockData.removeAt(index);
     return true;
+  }
+
+  Uri _reportsUri() => Uri.parse('$baseUrl/reports');
+
+  List<ReportModel> _filterByQuery(List<ReportModel> reports, String query) {
+    final trimmed = query.trim().toLowerCase();
+    if (trimmed.isEmpty) return reports;
+    return reports
+        .where((item) => item.title.toLowerCase().contains(trimmed))
+        .toList();
+  }
+
+  int _findReportIndexById(String id) {
+    return _mockData.indexWhere((report) => report.id == id);
+  }
+
+  Future<void> _simulateNetworkDelay(Duration duration) {
+    return Future.delayed(duration);
   }
 }
