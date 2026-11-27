@@ -1,0 +1,88 @@
+name: PraFind CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, v1.0_dev, V1.1]
+  pull_request:
+    branches: [main, v1.0_dev]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Tahap 1: Analisis statis dan pengujian unit/widget otomatis
+  ci:
+    name: Analyze & Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run static analysis
+        run: flutter analyze
+
+      - name: Run automated unit & widget tests
+        run: flutter test --reporter expanded
+
+  # Tahap 2: Auto-build APK & Deploy Live (hanya berjalan jika job 'ci' hijau)
+  build_and_deploy:
+    name: Build APK & Deploy Live
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/v1.0_dev' || github.ref == 'refs/heads/main')
+    needs: ci
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Release APK
+        run: flutter build apk --release
+
+      - name: Upload Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prafind-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Build Flutter Web for Live Preview
+        run: flutter build web --release --base-href "/PraFind/"
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
