@@ -159,7 +159,7 @@ void main() {
   // 4. 25 Unit Test untuk Issue #7 (Penyimpanan Path/URL Foto pada ReportModel)
   group('Issue #7: Penyimpanan Foto pada ReportModel (25 Tes)', () {
     for (var i = 1; i <= 15; i++) {
-      test('ImagePath Persistence #${i}: menyimpan & serialisasi path gambar ke-$i', () {
+      test('ImagePath Persistence #$i: menyimpan & serialisasi path gambar ke-$i', () {
         final path = '/storage/emulated/0/DCIM/foto_barang_$i.jpg';
         final model = ReportModel(
           id: '$i',
@@ -179,7 +179,7 @@ void main() {
     }
 
     for (var i = 1; i <= 10; i++) {
-      test('ImageUrl Fallback & Null Handling #${i}', () {
+      test('ImageUrl Fallback & Null Handling #$i', () {
         if (i % 2 == 0) {
           final m = ReportModel.fromJson({
             'id': '$i',
@@ -200,7 +200,7 @@ void main() {
   // 5. 25 Unit Test untuk Issue #8 (Persistensi CRUD & Cache Lokal SharedPreferences)
   group('Issue #8: Persistensi CRUD & Sinkronisasi Cache Lokal (25 Tes)', () {
     for (var i = 1; i <= 10; i++) {
-      test('Submit & Persist Local Cache #${i}: laporan ke-$i bertahan antar instance', () async {
+      test('Submit & Persist Local Cache #$i: laporan ke-$i bertahan antar instance', () async {
         final mockClient = MockClient((req) async {
           if (req.method == 'POST') return http.Response('{"id":"$i"}', 201);
           return http.Response('[]', 200);
@@ -225,7 +225,7 @@ void main() {
     }
 
     for (var i = 1; i <= 8; i++) {
-      test('Update Status & Persist #${i}: status RESOLVED bertahan di cache', () async {
+      test('Update Status & Persist #$i: status RESOLVED bertahan di cache', () async {
         final mockClient = MockClient((req) async {
           if (req.method == 'PUT') return http.Response('{}', 200);
           return http.Response('[]', 200);
@@ -249,7 +249,7 @@ void main() {
     }
 
     for (var i = 1; i <= 7; i++) {
-      test('Delete & Restore Report #${i}: menghapus dan mengembalikan laporan ke-$i', () async {
+      test('Delete & Restore Report #$i: menghapus dan mengembalikan laporan ke-$i', () async {
         final mockClient = MockClient((req) async => http.Response('[]', 200));
         final repo = ReportRepository(client: mockClient);
         final report = ReportModel(
@@ -273,7 +273,7 @@ void main() {
   // 6. 20 Unit Test untuk Issue #9 (Retensi Query Pencarian & Debounce)
   group('Issue #9: Retensi Query Pencarian & Debounce State (20 Tes)', () {
     for (var i = 1; i <= 10; i++) {
-      test('Query Retention #${i}: currentQuery dipertahankan setelah markAsResolved & deleteReport', () async {
+      test('Query Retention #$i: currentQuery dipertahankan setelah markAsResolved & deleteReport', () async {
         final mockClient = MockClient((_) async => http.Response(
               jsonEncode([
                 {
@@ -301,7 +301,7 @@ void main() {
     }
 
     for (var i = 1; i <= 10; i++) {
-      test('Debounce Search #${i}: onSearchChanged memperbarui currentQuery dan memicu fetch ter-debounce', () async {
+      test('Debounce Search #$i: onSearchChanged memperbarui currentQuery dan memicu fetch ter-debounce', () async {
         final mockClient = MockClient((_) async => http.Response('[]', 200));
         final repo = ReportRepository(client: mockClient);
         final notifier = ReportListNotifier(repo);
@@ -319,7 +319,7 @@ void main() {
   // 7. 20 Unit Test untuk Issue #10 & #11 (Otorisasi Pemilik & Tautan WhatsApp Kontak)
   group('Issue #10 & #11: Otorisasi Pemilik & URI Kontak Pelapor (20 Tes)', () {
     for (var i = 1; i <= 10; i++) {
-      test('Ownership Check #${i}: hanya pemilik atau admin yang dapat memodifikasi laporan', () {
+      test('Ownership Check #$i: hanya pemilik atau admin yang dapat memodifikasi laporan', () {
         final report = ReportModel(
           id: '$i',
           title: 'Barang $i',
