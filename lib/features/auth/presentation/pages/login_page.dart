@@ -6,6 +6,7 @@ import 'package:local_auth/local_auth.dart';
 import '../../../../core/utils/app_logger.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../reports/presentation/pages/report_list_page.dart';
+import '../../domain/auth_session.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -26,7 +27,11 @@ class _LoginPageState extends State<LoginPage> {
     if (kIsWeb) {
       if (mounted) {
         setState(() => _isAuthenticating = false);
-        _onLoginSuccess('Login Berhasil (Web Bypass)!');
+        AuthSession.login(
+          userId: AuthSession.defaultUserId,
+          userName: 'Mahasiswa Pradita (Web)',
+        );
+        _onLoginSuccess('Login Berhasil (Sesi Mahasiswa Web)!');
       }
       return;
     }
@@ -37,6 +42,10 @@ class _LoginPageState extends State<LoginPage> {
 
       setState(() => _isAuthenticating = false);
       if (authenticated) {
+        AuthSession.login(
+          userId: AuthSession.defaultUserId,
+          userName: AuthSession.defaultUserName,
+        );
         _onLoginSuccess('Login Berhasil!');
       } else {
         AppLogger.warn('Auth', 'Autentikasi dibatalkan atau gagal oleh pengguna');

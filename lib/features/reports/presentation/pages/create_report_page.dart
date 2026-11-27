@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/utils/app_logger.dart';
 import '../../../../core/utils/snackbar_helper.dart';
+import '../../../auth/domain/auth_session.dart';
 import '../../domain/report_model.dart';
 import '../../domain/report_validator.dart';
 import '../providers/create_report_provider.dart';
@@ -23,22 +24,29 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
   final _titleController = TextEditingController();
   final _locationController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _reporterNameController = TextEditingController(text: AuthSession.currentUserName);
+  final _contactController = TextEditingController();
   final _picker = ImagePicker();
 
-  final String _selectedType = 'LOST';
+  String _selectedType = 'LOST';
   String _selectedCategory = 'Elektronik';
   XFile? _imageFile;
   bool _isLocationLoading = false;
+  bool _isPickingImage = false;
 
   @override
   void dispose() {
     _titleController.dispose();
     _locationController.dispose();
     _descriptionController.dispose();
+    _reporterNameController.dispose();
+    _contactController.dispose();
     super.dispose();
   }
 
   Future<void> _pickImage(ImageSource source) async {
+    if (_isPickingImage) return;
+    setState(() => _isPickingImage = true);
     AppLogger.info('CreateReport', 'Membuka pemilih gambar (${source.name})');
     try {
       final pickedFile = await _picker.pickImage(source: source, imageQuality: 70);
@@ -58,6 +66,8 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
       );
       if (!mounted) return;
       showAppSnackBar(context, 'Gagal mengambil gambar: $e');
+    } finally {
+      if (mounted) setState(() => _isPickingImage = false);
     }
   }
 
@@ -111,6 +121,7 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Menyimpan foto (_imageFile), pemilik, dan kontak pelapor ke ReportModel (Issues #7, #10, #11)
     final report = ReportModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       title: _titleController.text.trim(),
@@ -118,6 +129,12 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
       location: _locationController.text.trim(),
       description: _descriptionController.text.trim(),
       type: _selectedType,
+      status: ReportStatus.active.value,
+      imagePath: _imageFile?.path,
+      ownerId: AuthSession.currentUserId,
+      reporterName: _reporterNameController.text.trim(),
+      contact: _contactController.text.trim(),
+      createdAt: DateTime.now(),
     );
 
     AppLogger.info(
@@ -188,6 +205,17 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        SegmentedButton<String>(
+          segments: const [
+            ButtonSegment(value: 'LOST', label: Text('Kehilangan (LOST)')),
+            ButtonSegment(value: 'FOUND', label: Text('Menemukan (FOUND)')),
+          ],
+          selected: {_selectedType},
+          onSelectionChanged: isSubmitting
+              ? null
+              : (selection) => setState(() => _selectedType = selection.first),
+        ),
+        const SizedBox(height: 16),
         TextFormField(
           key: const Key('title_input'),
           controller: _titleController,
@@ -220,13 +248,38 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
           controller: _descriptionController,
           enabled: !isSubmitting,
           maxLines: 3,
-          textInputAction: TextInputAction.done,
+          textInputAction: TextInputAction.next,
           decoration: const InputDecoration(
             labelText: 'Deskripsi',
             helperText: 'Jelaskan ciri-ciri barang secara detail',
             border: OutlineInputBorder(),
           ),
           validator: ReportValidator.validateDescription,
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          key: const Key('reporter_name_input'),
+          controller: _reporterNameController,
+          enabled: !isSubmitting,
+          textInputAction: TextInputAction.next,
+          decoration: const InputDecoration(
+            labelText: 'Nama Pelapor',
+            border: OutlineInputBorder(),
+          ),
+          validator: ReportValidator.validateReporterName,
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          key: const Key('contact_input'),
+          controller: _contactController,
+          enabled: !isSubmitting,
+          textInputAction: TextInputAction.done,
+          decoration: const InputDecoration(
+            labelText: 'Kontak Pelapor (WhatsApp / Email / @IG)',
+            helperText: 'Contoh: 081234567890 atau nama@student.pradita.ac.id',
+            border: OutlineInputBorder(),
+          ),
+          validator: ReportValidator.validateContact,
         ),
       ],
     );
@@ -275,12 +328,12 @@ class _CreateReportPageState extends ConsumerState<CreateReportPage> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             TextButton.icon(
-              onPressed: isSubmitting ? null : () => _pickImage(ImageSource.camera),
+              onPressed: isSubmitting || _isPickingImage ? null : () => _pickImage(ImageSource.camera),
               icon: const Icon(Icons.camera_alt),
               label: const Text('Kamera'),
             ),
             TextButton.icon(
-              onPressed: isSubmitting ? null : () => _pickImage(ImageSource.gallery),
+              onPressed: isSubmitting || _isPickingImage ? null : () => _pickImage(ImageSource.gallery),
               icon: const Icon(Icons.photo),
               label: const Text('Galeri'),
             ),
