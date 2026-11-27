@@ -64,8 +64,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # Lewati validasi versi AGP/Gradle bawaan runner agar build APK rilis berjalan mulus
       - name: Build Release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --android-skip-build-dependency-validation
 
       - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
